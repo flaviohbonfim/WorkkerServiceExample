@@ -11,7 +11,7 @@ env:
   AWS_SECURITY_GROUP: ${{ secrets.AWS_SECURITY_GROUP }}
   ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
   SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-  
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -29,6 +29,7 @@ jobs:
 
       - name: Attach SSH keys
         run: |
+          eval $(ssh-agent -s)
           ssh-add <(echo "$SSH_PRIVATE_KEY")
           chmod 600 ~/.ssh/id_rsa
 

@@ -51,14 +51,11 @@ jobs:
             --port 22 \
             --cidr ${{ steps.ip.outputs.ipv4 }}/32
 
-      - name: Get all instances associated with tags
+      - name: Get all instances associated with tags and Deploy
         run: |
           targed_instances=$(aws ec2 describe-instances --region $AWS_REGION --filters "Name=instance.group-id,Values=$AWS_SECURITY_GROUP" "Name=tag:application-type,Values=background-service,multiple" --query "Reservations[*].Instances[*].PublicDnsName")
           targed_instances_count=$(echo "$targed_instances" | jq '. | length')
           echo "Total of instances is $targed_instances_count"
-
-      - name: Deploy      
-        run: |
           cd ~/.ssh
           for ((i = 0; i < $targed_instances_count; i++)); do
             instance_public_dns=$(echo "$targed_instances" | jq -r ".[${i}][0]")

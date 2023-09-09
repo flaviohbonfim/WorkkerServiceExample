@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v1
@@ -26,12 +26,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-
-      # - name: Attach SSH keys
-      #   run: |
-      #     eval $(ssh-agent -s)
-      #     echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-      #     chmod 600 ~/.ssh/id_rsa
 
       - name: Build and package
         run: |
@@ -58,26 +52,29 @@ jobs:
           targed_instances_count=$(echo "$targed_instances" | jq '. | length')
           echo "Total of instances is $targed_instances_count"
 
-      # - name: Start loop of instances using SSH
-      #   run: |
-      #     cd ~/.ssh
-      #     for ((i = 0; i < $targed_instances_count; i++)); do
-      #       instance_public_dns=$(echo "$targed_instances" | jq -r ".[${i}][0]")
+      - name: webfactory/ssh-agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+        ssh-private-key: $SSH_PRIVATE_KEY
+        run: |
+          cd ~/.ssh
+          for ((i = 0; i < $targed_instances_count; i++)); do
+            instance_public_dns=$(echo "$targed_instances" | jq -r ".[${i}][0]")
 
-      #       if [ "$instance_public_dns" == "null" ] || [ -z "$instance_public_dns" ]; then
-      #         echo "No public DNS to $instance_public_dns"
-      #       else
-      #         echo "Copying files to $instance_public_dns"
-      #         scp -o 'StrictHostKeyChecking no' ./publish/src/WorkerServiceExample.Service/bin/Release/net6.0/centos.7-x64/publish/*.{json,so,dll} ec2-user@$instance_public_dns:/home/ec2-user/workerserviceexample
-      #         scp -o 'StrictHostKeyChecking no' ./publish/scripts/deploy/update-appsettings.sh ec2-user@$instance_public_dns:/home/ec2-user/workerserviceexample
-      #         ssh -o 'StrictHostKeyChecking no' ec2-user@$instance_public_dns "sudo chmod 744 /home/ec2-user/workerserviceexample/update-appsettings.sh"
-      #         echo "Files copied to $instance_public_dns"
+            if [ "$instance_public_dns" == "null" ] || [ -z "$instance_public_dns" ]; then
+              echo "No public DNS to $instance_public_dns"
+            else
+              echo "Copying files to $instance_public_dns"
+              scp -o 'StrictHostKeyChecking no' ./publish/src/WorkerServiceExample.Service/bin/Release/net6.0/centos.7-x64/publish/*.{json,so,dll} ec2-user@$instance_public_dns:/home/ec2-user/workerserviceexample
+              scp -o 'StrictHostKeyChecking no' ./publish/scripts/deploy/update-appsettings.sh ec2-user@$instance_public_dns:/home/ec2-user/workerserviceexample
+              ssh -o 'StrictHostKeyChecking no' ec2-user@$instance_public_dns "sudo chmod 744 /home/ec2-user/workerserviceexample/update-appsettings.sh"
+              echo "Files copied to $instance_public_dns"
 
-      #         echo "Start update in $instance_public_dns"
-      #         ssh -o 'StrictHostKeyChecking no' ec2-user@$instance_public_dns "sudo /home/ec2-user/workerserviceexample/update-appsettings.sh"
-      #         echo "Server updated successfully in $instance_public_dns"
-      #       fi
-      #     done
+              echo "Start update in $instance_public_dns"
+              ssh -o 'StrictHostKeyChecking no' ec2-user@$instance_public_dns "sudo /home/ec2-user/workerserviceexample/update-appsettings.sh"
+              echo "Server updated successfully in $instance_public_dns"
+            fi
+          done
 
       - name: revoke runner ip address
         run: |

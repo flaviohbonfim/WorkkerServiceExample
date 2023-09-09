@@ -1,0 +1,80 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_SECURITY_GROUP: ${{ secrets.AWS_SECURITY_GROUP }}
+  ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: $AWS_ACCESS_KEY_ID
+          aws-secret-access-key: $AWS_SECRET_ACCESS_KEY
+          aws-region: $AWS_REGION
+
+      - name: Attach SSH keys
+        run: |
+          ssh-add <(echo "$SSH_PRIVATE_KEY")
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Build and package
+      run: |
+        dotnet build ./src/WorkerServiceExample.Service/WorkerServiceExample.Service.csproj --configuration Release 
+        dotnet publish ./src/WorkerServiceExample.Service/WorkerServiceExample.Service.csproj --configuration Release --runtime centos.7-x64 --self-contained --output ./publish
+        cp -r scripts/deploy/* ./publish/
+
+      - name: Get public IP address
+        run: |
+          public_ip_address=$(curl -s https://checkip.amazonaws.com)
+          echo "Current IP is $public_ip_address"
+
+      - name: Authorize security group ingress
+        run: |
+          aws ec2 authorize-security-group-ingress --region $AWS_REGION --group-id $AWS_SECURITY_GROUP --ip-permissions '[{"IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": "'"$public_ip_address/32"'", "Description": "aws-deploy"}]}]'
+
+      - name: Get all instances associated with tags
+        run: |
+          targed_instances=$(aws ec2 describe-instances --region $AWS_REGION --filters "Name=instance.group-id,Values=$AWS_SECURITY_GROUP" "Name=tag:application-type,Values=background-service,multiple" --query "Reservations[*].Instances[*].PublicDnsName")
+          targed_instances_count=$(echo "$targed_instances" | jq '. | length')
+          echo "Total of instances is $targed_instances_count"
+
+      - name: Start loop of instances using SSH
+        run: |
+          cd ~/.ssh
+          for ((i = 0; i < $targed_instances_count; i++)); do
+            instance_public_dns=$(echo "$targed_instances" | jq -r ".[${i}][0]")
+
+            if [ "$instance_public_dns" == "null" ] || [ -z "$instance_public_dns" ]; then
+              echo "No public DNS to $instance_public_dns"
+            else
+              echo "Copying files to $instance_public_dns"
+              scp -o 'StrictHostKeyChecking no' ./publish/src/WorkerServiceExample.Service/bin/Release/net6.0/centos.7-x64/publish/*.{json,so,dll} ec2-user@$instance_public_dns:/home/ec2-user/workerserviceexample
+              scp -o 'StrictHostKeyChecking no' ./publish/scripts/deploy/update-appsettings.sh ec2-user@$instance_public_dns:/home/ec2-user/workerserviceexample
+              ssh -o 'StrictHostKeyChecking no' ec2-user@$instance_public_dns "sudo chmod 744 /home/ec2-user/workerserviceexample/update-appsettings.sh"
+              echo "Files copied to $instance_public_dns"
+
+              echo "Start update in $instance_public_dns"
+              ssh -o 'StrictHostKeyChecking no' ec2-user@$instance_public_dns "sudo /home/ec2-user/workerserviceexample/update-appsettings.sh"
+              echo "Server updated successfully in $instance_public_dns"
+            fi
+          done
+
+      - name: Revoke security group ingress
+        run: |
+          aws ec2 revoke-security-group-ingress --region $AWS_REGION --group-id $AWS_SECURITY_GROUP --ip-permissions '[{"IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": "'"$public_ip_address/32"'", "Description": "circleci-deploy"}]}]'
+

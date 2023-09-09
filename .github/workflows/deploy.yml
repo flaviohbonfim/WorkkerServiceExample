@@ -19,7 +19,7 @@ jobs:
           AWS_SECURITY_GROUP: ${{ secrets.AWS_SECURITY_GROUP }}
           ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        run: echo "AWS_REGION: $AWS_REGION"
+        run: echo "$AWS_REGION"
 
       - name: Checkout code
         uses: actions/checkout@v2

@@ -18,9 +18,9 @@ jobs:
           echo "AWS_SECURITY_GROUP=${{ secrets.AWS_SECURITY_GROUP }}" >> $GITHUB_ENV
           echo "ENVIRONMENT=${{ secrets.ENVIRONMENT }}" >> $GITHUB_ENV
           echo "SSH_PRIVATE_KEY=${{ secrets.SSH_PRIVATE_KEY }}" >> $GITHUB_ENV
-          
+
       - name: Debug AWS_REGION
-        run: echo "AWS_REGION: $AWS_REGION"
+        run: echo "$AWS_REGION"
 
       - name: Checkout code
         uses: actions/checkout@v2

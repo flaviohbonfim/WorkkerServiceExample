@@ -68,7 +68,7 @@ jobs:
             else
               echo "Copying files to $instance_public_dns"
               ls ~/publish/
-              scp -o 'StrictHostKeyChecking no' ~/publish/*.{json,so,dll} ec2-user@$instance_public_dns:/home/ec2-user/workerserviceexample
+              scp -o 'StrictHostKeyChecking no' ~/publish/*.{json,so,dll,sh} ec2-user@$instance_public_dns:/home/ec2-user/workerserviceexample
               ssh -o 'StrictHostKeyChecking no' ec2-user@$instance_public_dns "sudo chmod 744 /home/ec2-user/workerserviceexample/update-appsettings.sh"
               echo "Files copied to $instance_public_dns"
 

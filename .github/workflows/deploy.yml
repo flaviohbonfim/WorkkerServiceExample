@@ -46,10 +46,12 @@ jobs:
 
       - name: Authorize security group ingress
         run: |
+          public_ip_address=$(curl -s https://checkip.amazonaws.com)
           aws ec2 authorize-security-group-ingress --region $AWS_REGION --group-id $AWS_SECURITY_GROUP --ip-permissions '[{"IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": $public_ip_address/32, "Description": "github-deploy"}]}]'
 
       - name: Get all instances associated with tags
         run: |
+          public_ip_address=$(curl -s https://checkip.amazonaws.com)
           targed_instances=$(aws ec2 describe-instances --region $AWS_REGION --filters "Name=instance.group-id,Values=$AWS_SECURITY_GROUP" "Name=tag:application-type,Values=background-service,multiple" --query "Reservations[*].Instances[*].PublicDnsName")
           targed_instances_count=$(echo "$targed_instances" | jq '. | length')
           echo "Total of instances is $targed_instances_count"
@@ -77,4 +79,5 @@ jobs:
 
       - name: Revoke security group ingress
         run: |
+          public_ip_address=$(curl -s https://checkip.amazonaws.com)
           aws ec2 revoke-security-group-ingress --region $AWS_REGION --group-id $AWS_SECURITY_GROUP --ip-permissions '[{"IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": $public_ip_address/32, "Description": "github-deploy"}]}]'

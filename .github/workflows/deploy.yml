@@ -46,7 +46,7 @@ jobs:
 
       - name: Authorize security group ingress
         run: |
-          aws ec2 authorize-security-group-ingress --region $AWS_REGION --group-id $AWS_SECURITY_GROUP --ip-permissions '[{"IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": "'"$public_ip_address/32"'", "Description": "aws-deploy"}]}]'
+          aws ec2 authorize-security-group-ingress --region $AWS_REGION --group-id $AWS_SECURITY_GROUP --ip-permissions '[{"IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": $public_ip_address/32, "Description": "github-deploy"}]}]'
 
       - name: Get all instances associated with tags
         run: |
@@ -77,4 +77,4 @@ jobs:
 
       - name: Revoke security group ingress
         run: |
-          aws ec2 revoke-security-group-ingress --region $AWS_REGION --group-id $AWS_SECURITY_GROUP --ip-permissions '[{"IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": "'"$public_ip_address/32"'", "Description": "aws-deploy"}]}]'
+          aws ec2 revoke-security-group-ingress --region $AWS_REGION --group-id $AWS_SECURITY_GROUP --ip-permissions '[{"IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": $public_ip_address/32, "Description": "github-deploy"}]}]'

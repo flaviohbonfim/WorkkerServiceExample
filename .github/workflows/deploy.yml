@@ -34,9 +34,9 @@ jobs:
 
       - name: Build and package
         run: |
-        dotnet build ./src/WorkerServiceExample.Service/WorkerServiceExample.Service.csproj --configuration Release 
-        dotnet publish ./src/WorkerServiceExample.Service/WorkerServiceExample.Service.csproj --configuration Release --runtime centos.7-x64 --self-contained --output ./publish
-        cp -r scripts/deploy/* ./publish/
+          dotnet build ./src/WorkerServiceExample.Service/WorkerServiceExample.Service.csproj --configuration Release 
+          dotnet publish ./src/WorkerServiceExample.Service/WorkerServiceExample.Service.csproj --configuration Release --runtime centos.7-x64 --self-contained --output ./publish
+          cp -r scripts/deploy/* ./publish/
 
       - name: Get public IP address
         run: |

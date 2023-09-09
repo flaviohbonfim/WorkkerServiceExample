@@ -33,7 +33,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
 
       - name: Build and package
-      run: |
+        run: |
         dotnet build ./src/WorkerServiceExample.Service/WorkerServiceExample.Service.csproj --configuration Release 
         dotnet publish ./src/WorkerServiceExample.Service/WorkerServiceExample.Service.csproj --configuration Release --runtime centos.7-x64 --self-contained --output ./publish
         cp -r scripts/deploy/* ./publish/

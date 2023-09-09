@@ -39,15 +39,17 @@ jobs:
           dotnet publish ./src/WorkerServiceExample.Service/WorkerServiceExample.Service.csproj --configuration Release --runtime centos.7-x64 --self-contained --output ./publish
           cp -r scripts/deploy/* ./publish/
 
-      - name: Get public IP address
-        run: |
-          public_ip_address=$(curl -s https://checkip.amazonaws.com)
-          echo "Current IP is $public_ip_address"
+      - name: get runner ip address
+        id: ip
+        uses: haythem/public-ip@v1.2
 
       - name: Authorize security group ingress
         run: |
-          public_ip_address=$(curl -s https://checkip.amazonaws.com)
-          aws ec2 authorize-security-group-ingress --region $AWS_REGION --group-id $AWS_SECURITY_GROUP --ip-permissions '[{"IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": "$public_ip_address/32", "Description": "github-deploy"}]}]'
+          aws ec2 authorize-security-group-ingress \
+            --group-id $AWS_SECURITY_GROUP \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${{ steps.ip.outputs.ipv4 }}/32
 
       - name: Get all instances associated with tags
         run: |
@@ -76,7 +78,10 @@ jobs:
       #       fi
       #     done
 
-      - name: Revoke security group ingress
+      - name: revoke runner ip address
         run: |
-          public_ip_address=$(curl -s https://checkip.amazonaws.com)
-          aws ec2 revoke-security-group-ingress --region $AWS_REGION --group-id $AWS_SECURITY_GROUP --ip-permissions '[{"IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": "$public_ip_address/32", "Description": "github-deploy"}]}]'
+          aws ec2 revoke-security-group-ingress \
+            --group-id $AWS_INSTANCE_SG_ID \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${{ steps.ip.outputs.ipv4 }}/32

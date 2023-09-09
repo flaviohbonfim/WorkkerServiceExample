@@ -4,33 +4,28 @@ on:
   push:
     branches:
       - main
-
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_SECURITY_GROUP: ${{ secrets.AWS_SECURITY_GROUP }}
+  ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up environment variables
-        run: |
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
-          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> $GITHUB_ENV
-          echo "AWS_SECURITY_GROUP=${{ secrets.AWS_SECURITY_GROUP }}" >> $GITHUB_ENV
-          echo "ENVIRONMENT=${{ secrets.ENVIRONMENT }}" >> $GITHUB_ENV
-          echo "SSH_PRIVATE_KEY=${{ secrets.SSH_PRIVATE_KEY }}" >> $GITHUB_ENV
-
-      - name: Debug AWS_REGION
-        run: echo "$AWS_REGION"
-
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: $AWS_ACCESS_KEY_ID
-          aws-secret-access-key: $AWS_SECRET_ACCESS_KEY
-          aws-region: $AWS_REGION
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Attach SSH keys
         run: |

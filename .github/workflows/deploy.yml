@@ -51,7 +51,6 @@ jobs:
             --protocol tcp \
             --port 22 \
             --cidr ${{ steps.ip.outputs.ipv4 }}/32
-            --description "github-deploy"
 
       - name: Get all instances associated with tags
         run: |
@@ -87,4 +86,3 @@ jobs:
             --protocol tcp \
             --port 22 \
             --cidr ${{ steps.ip.outputs.ipv4 }}/32
-            --description "github-deploy"

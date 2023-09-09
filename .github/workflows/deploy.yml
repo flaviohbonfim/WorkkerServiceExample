@@ -17,6 +17,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Debug AWS_REGION
+        run: echo "AWS_REGION: $AWS_REGION"
+
       - name: Checkout code
         uses: actions/checkout@v2
 
